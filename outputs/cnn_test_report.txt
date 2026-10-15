@@ -1,0 +1,10 @@
+              precision    recall  f1-score   support
+
+       Boots       0.92      0.93      0.93       300
+     Sandals       0.90      0.88      0.89       300
+       Shoes       0.82      0.83      0.82       300
+    Slippers       0.83      0.83      0.83       193
+
+    accuracy                           0.87      1093
+   macro avg       0.87      0.87      0.87      1093
+weighted avg       0.87      0.87      0.87      1093

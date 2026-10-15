@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHOEBOX SIZER</title>
+<style>
+  :root{
+    --ink:#111111;
+    --paper:#FFF8E7;
+    --yellow:#FFE338;
+    --pink:#FF4FA0;
+    --blue:#3D7EFF;
+    --green:#7CFF6B;
+    --border:4px;
+    --shadow-off:7px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      radial-gradient(var(--ink) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: -10px -10px;
+    color:var(--ink);
+    font-family: "Archivo Black","Helvetica Neue",Arial,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+  .brutal-box{
+    background:#fff;
+    border:var(--border) solid var(--ink);
+    box-shadow: var(--shadow-off) var(--shadow-off) 0 var(--ink);
+  }
+
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;margin-bottom:26px;
+  }
+  h1{
+    font-size:clamp(28px,5vw,52px);
+    line-height:0.95;
+    margin:0;
+    letter-spacing:-1px;
+    text-transform:uppercase;
+  }
+  h1 span{
+    background:var(--yellow);
+    padding:2px 10px;
+    border:var(--border) solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
+    display:inline-block;
+    transform: rotate(-2deg);
+  }
+  .tagline{
+    font-family: "Courier New", monospace;
+    font-weight:700;
+    font-size:14px;
+    max-width:340px;
+    text-transform:none;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:24px;
+  }
+  @media (max-width:920px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{ padding:20px; margin-bottom:24px; }
+  .panel h2{
+    margin:0 0 14px;
+    text-transform:uppercase;
+    font-size:20px;
+    display:inline-block;
+    background:var(--ink);
+    color:var(--paper);
+    padding:4px 10px;
+  }
+
+  .dropzone{
+    border:3px dashed var(--ink);
+    background:repeating-linear-gradient(45deg,#fff,#fff 10px,#fffbe0 10px,#fffbe0 20px);
+    padding:26px;
+    text-align:center;
+    cursor:pointer;
+    font-weight:700;
+    transition:transform .08s ease;
+  }
+  .dropzone.drag{ background:var(--yellow); transform:scale(1.01); }
+  .dropzone small{
+    display:block; font-family:"Courier New",monospace; font-weight:600;
+    text-transform:none; margin-top:8px; font-size:12px;
+  }
+  input[type=file]{ display:none; }
+
+  .preview-wrap{ position:relative; margin-top:16px; display:none; line-height:0; }
+  .preview-wrap img{ width:100%; display:block; border:3px solid var(--ink); }
+  .preview-wrap canvas{ position:absolute; top:0; left:0; width:100%; height:100%; }
+
+  fieldset{
+    border:3px solid var(--ink); margin-top:16px; padding:12px 14px 16px;
+  }
+  legend{
+    font-weight:700; text-transform:uppercase; font-size:12px;
+    background:var(--pink); border:3px solid var(--ink); padding:2px 8px;
+  }
+  .field-row{ display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; }
+  .field{ flex:1; min-width:150px; }
+  label{
+    display:block; font-family:"Courier New",monospace; font-weight:700;
+    font-size:12px; text-transform:uppercase; margin-bottom:4px;
+  }
+  input[type=number]{
+    width:100%; border:3px solid var(--ink); padding:8px 10px;
+    font-family:"Courier New",monospace; font-weight:700; font-size:14px;
+    background:#fff;
+  }
+  input[type=number]:focus{ outline:3px solid var(--blue); }
+
+  button.brutal-btn{
+    font-family:inherit;
+    text-transform:uppercase;
+    font-weight:700;
+    font-size:16px;
+    padding:14px 20px;
+    background:var(--yellow);
+    border:var(--border) solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
+    cursor:pointer;
+    width:100%;
+    margin-top:16px;
+    transition: transform .05s ease, box-shadow .05s ease;
+  }
+  button.brutal-btn:active{
+    transform: translate(5px,5px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+  button.brutal-btn:disabled{
+    opacity:.5; cursor:not-allowed;
+  }
+  button.brutal-btn.secondary{ background:var(--green); }
+  button.brutal-btn.small{ padding:8px 12px; font-size:12px; width:auto; box-shadow:3px 3px 0 var(--ink); }
+
+  .stat{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:3px solid var(--ink); padding:10px 0; gap:10px;
+  }
+  .stat:last-child{ border-bottom:none; }
+  .stat .k{ font-family:"Courier New",monospace; font-weight:700; text-transform:uppercase; font-size:13px; }
+  .stat .v{ font-size:18px; font-weight:700; text-align:right; }
+  .tag{
+    display:inline-block; font-family:"Courier New",monospace; font-size:10px;
+    font-weight:700; text-transform:uppercase; padding:2px 6px;
+    border:2px solid var(--ink); margin-left:6px; background:#fff;
+  }
+  .tag.measured{ background:var(--green); }
+  .tag.assumed{ background:var(--yellow); }
+  .tag.fallback{ background:var(--pink); }
+
+  .warn{
+    background:var(--yellow);
+    border:3px solid var(--ink);
+    padding:10px 12px;
+    font-family:"Courier New",monospace;
+    font-weight:700;
+    font-size:13px;
+    margin-top:10px;
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .warn.error{ background:var(--pink); }
+
+  .legend-row{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-family:"Courier New",monospace; font-size:11px; font-weight:700; }
+  .legend-row span{ display:inline-flex; align-items:center; gap:5px; }
+  .swatch{ width:14px; height:14px; border:2px solid var(--ink); display:inline-block; }
+
+  .loading{ display:none; font-family:"Courier New",monospace; font-weight:700; margin-top:16px; }
+  .loading.show{ display:block; }
+  .loading .bar{
+    height:18px; background:repeating-linear-gradient(45deg,var(--ink),var(--ink) 8px,var(--yellow) 8px,var(--yellow) 16px);
+    border:3px solid var(--ink); margin-top:8px;
+    animation:slide 0.8s linear infinite;
+    background-size:200% 100%;
+  }
+  @keyframes slide{ from{background-position:0 0;} to{background-position:32px 0;} }
+
+  footer{ margin-top:40px; font-family:"Courier New",monospace; font-size:11px; text-align:center; opacity:.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>SHOEBOX <span>SIZER</span></h1>
+    <div class="tagline brutal-box" style="padding:10px 14px;">
+      UPLOAD A PHOTO → GET A SHOE CATEGORY, A 2D BOX, REAL-WORLD DIMENSIONS
+      AND A PRINTABLE SHOEBOX. RUNS YOUR OWN CNN + YOLO MODELS LOCALLY.
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- LEFT: upload + preview -->
+    <div>
+      <div class="panel brutal-box">
+        <h2>1. Photo</h2>
+
+        <div class="field-row" style="margin-top:0;">
+          <button class="brutal-btn small" id="modeUploadBtn" style="background:var(--yellow);">📁 Upload photo</button>
+          <button class="brutal-btn small" id="modeCameraBtn" style="background:#fff;">📷 Use camera</button>
+        </div>
+
+        <div class="dropzone" id="dropzone" style="margin-top:12px;">
+          DROP A SHOE PHOTO HERE<br>OR CLICK TO CHOOSE A FILE
+          <small>jpg / png / webp — a coin or A4 sheet in frame gives real measurements</small>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+
+        <div id="cameraPanel" style="display:none; margin-top:12px;">
+          <div class="field" style="margin-bottom:10px;">
+            <label for="cameraSelect">Camera source</label>
+            <select id="cameraSelect"><option>Starting camera...</option></select>
+          </div>
+          <video id="cameraVideo" autoplay playsinline muted
+                 style="width:100%; display:block; border:3px solid var(--ink); background:#000;"></video>
+          <div class="field-row">
+            <button class="brutal-btn secondary" id="captureBtn" style="flex:1;">📸 Capture &amp; Analyze</button>
+            <button class="brutal-btn small" id="stopCameraBtn">Stop camera</button>
+          </div>
+          <div id="cameraStatus" style="font-family:'Courier New',monospace; font-weight:700; font-size:12px; margin-top:8px;"></div>
+        </div>
+
+        <div class="preview-wrap" id="previewWrap">
+          <img id="previewImg" alt="preview">
+          <canvas id="overlay"></canvas>
+        </div>
+
+        <div class="legend-row" id="legend" style="display:none;">
+          <span><i class="swatch" style="background:#7CFF6B"></i>YOLO box</span>
+          <span><i class="swatch" style="background:#FFE338"></i>fallback box</span>
+          <span><i class="swatch" style="background:#3D7EFF"></i>A4 sheet</span>
+          <span><i class="swatch" style="background:orange"></i>card</span>
+          <span><i class="swatch" style="background:red"></i>coin</span>
+        </div>
+
+        <fieldset>
+          <legend>Scale reference in the photo</legend>
+
+          <div class="field">
+            <label for="refType">What's in the photo?</label>
+            <select id="refType">
+              <option value="auto">Auto-detect (try A4, then card, then coin)</option>
+              <option value="a4">A4 sheet of paper (210 × 297 mm)</option>
+              <option value="card">ID / credit / debit card (85.6 × 54 mm)</option>
+              <option value="coin">A coin</option>
+              <option value="manual">Nothing — I'll type the shoe's length myself</option>
+            </select>
+          </div>
+
+          <div class="field-row" id="coinRow" style="display:none;">
+            <div class="field">
+              <label for="coinPreset">Which coin?</label>
+              <select id="coinPreset"><option value="">— pick one —</option></select>
+            </div>
+            <div class="field">
+              <label for="coinMm">Diameter (mm)</label>
+              <input type="number" id="coinMm" step="0.01" placeholder="e.g. 24.26">
+            </div>
+          </div>
+
+          <div class="field-row" id="manualRow" style="display:none;">
+            <div class="field" style="flex:1 1 100%;">
+              <label for="outsoleMm">Shoe outsole length, heel-to-toe (mm)</label>
+              <input type="number" id="outsoleMm" step="0.1" placeholder="e.g. 265">
+              <div style="font-family:'Courier New',monospace; font-size:11px; font-weight:600; margin-top:6px; text-transform:none;">
+                No coin, card, or A4 sheet needed for this one. Measure the shoe's
+                outsole once with a ruler or tape and type it in — the pipeline
+                uses that single number as its real-world scale, so it can
+                convert the rest of the photo (width, height) to mm accurately
+                instead of guessing a category-typical length. Skip this
+                entirely and it'll fall back to that guess, clearly labeled
+                <b>ASSUMED</b> in the results.
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+        <button class="brutal-btn" id="analyzeBtn" disabled>Analyze photo</button>
+
+        <div class="loading" id="loading">
+          RUNNING CNN + YOLO...
+          <div class="bar"></div>
+        </div>
+
+        <div id="warnings"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div>
+      <div class="panel brutal-box" id="resultsPanel" style="display:none;">
+        <h2>2. Result</h2>
+        <div class="stat"><span class="k">Category</span><span class="v" id="rCategory">—</span></div>
+        <div class="stat"><span class="k">Height</span><span class="v" id="rHeight">—</span></div>
+        <div class="stat"><span class="k">Width</span><span class="v" id="rWidth">—</span></div>
+        <div class="stat"><span class="k">Depth (heel-to-toe)</span><span class="v" id="rDepth">—</span></div>
+      </div>
+
+      <div class="panel brutal-box" id="boxPanel" style="display:none;">
+        <h2>3. Recommended shoebox</h2>
+        <div class="stat"><span class="k">Height</span><span class="v" id="bHeight">—</span></div>
+        <div class="stat"><span class="k">Width</span><span class="v" id="bWidth">—</span></div>
+        <div class="stat"><span class="k">Depth</span><span class="v" id="bDepth">—</span></div>
+        <div class="stat"><span class="k">Est. foot / EU size</span><span class="v" id="bFoot">—</span></div>
+        <button class="brutal-btn secondary" id="stlBtn">Download printable STL</button>
+      </div>
+
+      <div class="panel brutal-box" id="preview3dPanel" style="display:none;">
+        <h2>4. 3D preview</h2>
+        <img id="preview3dImg" style="width:100%; border:3px solid var(--ink); display:block;" alt="3D shoebox preview">
+      </div>
+    </div>
+
+  </div>
+
+  <div class="panel brutal-box" id="livePanel" style="margin-top:24px; padding:20px;">
+    <h2>Live camera feed (Bluetooth)</h2>
+    <p style="font-family:'Courier New',monospace; font-weight:700; font-size:13px;">
+      Pair an external camera, send photos over Bluetooth to this PC, and run
+      <code>python bluetooth_watcher.py</code> alongside this app (see README) —
+      every photo it picks up gets analyzed automatically and appears here,
+      no manual upload needed.
+    </p>
+    <button class="brutal-btn" id="liveToggle" style="width:auto;">Start watching for camera photos</button>
+    <div id="liveStatus" style="font-family:'Courier New',monospace; font-weight:700; font-size:12px; margin-top:10px;"></div>
+  </div>
+
+  <footer>SHOEBOX SIZER — runs 100% on your machine, no data leaves this computer.</footer>
+</div>
+
+<script>
+const dropzone   = document.getElementById('dropzone');
+const fileInput  = document.getElementById('fileInput');
+const previewWrap= document.getElementById('previewWrap');
+const previewImg = document.getElementById('previewImg');
+const overlay    = document.getElementById('overlay');
+const legend     = document.getElementById('legend');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const loading    = document.getElementById('loading');
+const warningsEl = document.getElementById('warnings');
+const resultsPanel = document.getElementById('resultsPanel');
+const boxPanel      = document.getElementById('boxPanel');
+const stlBtn         = document.getElementById('stlBtn');
+
+let currentFile = null;
+let lastResult  = null;
+
+// ---- scale reference dropdown ----
+const refType    = document.getElementById('refType');
+const coinRow     = document.getElementById('coinRow');
+const manualRow   = document.getElementById('manualRow');
+const coinPreset  = document.getElementById('coinPreset');
+const coinMmInput = document.getElementById('coinMm');
+
+function updateRefRows(){
+  coinRow.style.display   = refType.value === 'coin'   ? 'flex' : 'none';
+  manualRow.style.display = refType.value === 'manual' ? 'flex' : 'none';
+}
+refType.addEventListener('change', updateRefRows);
+updateRefRows();
+
+coinPreset.addEventListener('change', () => {
+  if (coinPreset.value) coinMmInput.value = coinPreset.value;
+});
+
+fetch('/api/reference_options').then(r => r.json()).then(opts => {
+  Object.entries(opts.coins || {}).forEach(([name, mm]) => {
+    const o = document.createElement('option');
+    o.value = mm; o.textContent = `${name} (${mm} mm)`;
+    coinPreset.appendChild(o);
+  });
+}).catch(() => { /* dropdown still works with manual mm entry if this fails */ });
+
+// ---- file selection / drag-drop ----
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) setFile(fileInput.files[0]);
+});
+
+function setFile(file){
+  currentFile = file;
+  const url = URL.createObjectURL(file);
+  previewImg.src = url;
+  previewWrap.style.display = 'block';
+  analyzeBtn.disabled = false;
+  clearResults();
+  previewImg.onload = () => resizeOverlay();
+}
+
+function clearResults(){
+  lastResult = null;
+  resultsPanel.style.display = 'none';
+  boxPanel.style.display = 'none';
+  document.getElementById('preview3dPanel').style.display = 'none';
+  warningsEl.innerHTML = '';
+  legend.style.display = 'none';
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0,0,overlay.width, overlay.height);
+}
+
+function resizeOverlay(){
+  overlay.width  = previewImg.clientWidth;
+  overlay.height = previewImg.clientHeight;
+  if (lastResult) drawOverlay(lastResult);
+}
+window.addEventListener('resize', resizeOverlay);
+
+// ---- analyze ----
+function refFieldsValid(){
+  if (refType.value === 'coin' && !document.getElementById('coinMm').value){
+    showWarning('Pick a coin (or type its diameter) before analyzing, or switch to Auto-detect.', true);
+    return false;
+  }
+  if (refType.value === 'manual' && !document.getElementById('outsoleMm').value){
+    showWarning('Type the shoe\'s outsole length in mm before analyzing, or switch to Auto-detect.', true);
+    return false;
+  }
+  return true;
+}
+
+// Shared by both the file-upload "Analyze photo" button and the camera's
+// "Capture & Analyze" button -- same endpoint, same reference-type fields,
+// just a different source for the image bytes (a File from disk vs. a
+// Blob grabbed from the live <video> feed).
+async function submitForAnalysis(imageBlob, filename, busyBtn){
+  loading.classList.add('show');
+  busyBtn.disabled = true;
+  warningsEl.innerHTML = '';
+
+  const fd = new FormData();
+  fd.append('image', imageBlob, filename);
+  fd.append('reference_type', refType.value);
+  const coinMm = document.getElementById('coinMm').value;
+  const outsoleMm = document.getElementById('outsoleMm').value;
+  if (refType.value === 'coin' && coinMm) fd.append('coin_mm', coinMm);
+  if (refType.value === 'manual' && outsoleMm) fd.append('outsole_mm', outsoleMm);
+
+  try{
+    const resp = await fetch('/api/analyze', { method:'POST', body: fd });
+    const data = await resp.json();
+    loading.classList.remove('show');
+    busyBtn.disabled = false;
+
+    if (!resp.ok || data.error){
+      showWarning(data.error || 'Something went wrong.', true);
+      return;
+    }
+    lastResult = data;
+    render(data);
+  }catch(err){
+    loading.classList.remove('show');
+    busyBtn.disabled = false;
+    showWarning('Could not reach the server: ' + err, true);
+  }
+}
+
+analyzeBtn.addEventListener('click', async () => {
+  if (!currentFile) return;
+  if (!refFieldsValid()) return;
+  await submitForAnalysis(currentFile, currentFile.name || 'upload.jpg', analyzeBtn);
+});
+
+// ---- camera mode ----
+const modeUploadBtn = document.getElementById('modeUploadBtn');
+const modeCameraBtn = document.getElementById('modeCameraBtn');
+const cameraPanel   = document.getElementById('cameraPanel');
+const cameraVideo   = document.getElementById('cameraVideo');
+const captureBtn    = document.getElementById('captureBtn');
+const stopCameraBtn = document.getElementById('stopCameraBtn');
+const cameraStatus  = document.getElementById('cameraStatus');
+const cameraSelect  = document.getElementById('cameraSelect');
+let cameraStream = null;
+
+// Phone-as-webcam apps (Iriun, DroidCam, EpocCam, OBS Virtual Cam, etc.)
+// register themselves as a normal camera device, but the browser has no
+// way to know that's the one you actually want -- it just defaults to
+// whatever's first, usually the built-in webcam. This nudges the picker
+// toward a phone-cam app if one is installed and running.
+const PHONE_CAM_HINTS = /iriun|droidcam|epoccam|ivcam|obs virtual|camo|reincubate/i;
+
+// Returns null if the currently-active device is fine as-is, or a
+// deviceId string if a better (phone-cam) device was found and the
+// caller should actually switch the live stream to it -- populating the
+// <select>'s displayed value is NOT the same as switching the feed, and
+// that mismatch was the bug: the dropdown could show "Iriun Webcam" as
+// selected while the video underneath was still the laptop's own webcam.
+async function populateCameraList(activeDeviceId){
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const cams = devices.filter(d => d.kind === 'videoinput');
+  cameraSelect.innerHTML = '';
+  cams.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d.deviceId;
+    o.textContent = d.label || `Camera (${cameraSelect.length + 1})`;
+    cameraSelect.appendChild(o);
+  });
+
+  const activeIsPhoneCam = cams.find(d => d.deviceId === activeDeviceId && PHONE_CAM_HINTS.test(d.label));
+  if (activeIsPhoneCam){
+    cameraSelect.value = activeDeviceId;
+    return null;
+  }
+
+  const phoneCam = cams.find(d => PHONE_CAM_HINTS.test(d.label));
+  if (phoneCam && phoneCam.deviceId !== activeDeviceId){
+    cameraSelect.value = phoneCam.deviceId;
+    return phoneCam.deviceId;   // tell startCamera() to actually switch to it
+  }
+
+  if (activeDeviceId) cameraSelect.value = activeDeviceId;
+  return null;
+}
+
+async function startCamera(deviceId){
+  dropzone.style.display = 'none';
+  previewWrap.style.display = 'none';
+  analyzeBtn.style.display = 'none';
+  cameraPanel.style.display = 'block';
+  modeCameraBtn.style.background = 'var(--yellow)';
+  modeUploadBtn.style.background = '#fff';
+  clearResults();
+
+  try{
+    const videoConstraints = { width: { ideal: 1280 }, height: { ideal: 960 } };
+    if (deviceId) videoConstraints.deviceId = { exact: deviceId };
+
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+    cameraVideo.srcObject = cameraStream;
+
+    // Device labels are only populated AFTER permission is granted, so the
+    // list has to be (re)built here, once we actually have a stream.
+    const activeDeviceId = cameraStream.getVideoTracks()[0].getSettings().deviceId;
+    const shouldSwitchTo = await populateCameraList(activeDeviceId);
+
+    if (shouldSwitchTo){
+      // A phone-cam app is present but we ended up on a different device
+      // (e.g. the laptop webcam, grabbed by default before we knew any
+      // better) -- stop that stream and actually switch to the phone cam,
+      // instead of just showing it as "selected" without using it.
+      cameraStatus.textContent = 'Switching to the phone camera...';
+      stopCamera();
+      return startCamera(shouldSwitchTo);
+    }
+
+    cameraStatus.textContent = cameraStatus.textContent ||
+      'Camera live — point it at the shoe and hit Capture.';
+  }catch(err){
+    cameraStatus.textContent = 'Could not access camera: ' + err.message +
+      ' (check browser permissions, or use Upload photo instead).';
+  }
+}
+
+function stopCamera(){
+  if (cameraStream){
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  cameraVideo.srcObject = null;
+}
+
+cameraSelect.addEventListener('change', () => {
+  stopCamera();
+  cameraStatus.textContent = '';
+  startCamera(cameraSelect.value);
+});
+
+modeUploadBtn.addEventListener('click', () => {
+  stopCamera();
+  cameraPanel.style.display = 'none';
+  dropzone.style.display = 'block';
+  analyzeBtn.style.display = 'block';
+  modeUploadBtn.style.background = 'var(--yellow)';
+  modeCameraBtn.style.background = '#fff';
+});
+
+modeCameraBtn.addEventListener('click', () => startCamera());
+stopCameraBtn.addEventListener('click', () => {
+  stopCamera();
+  cameraStatus.textContent = 'Camera stopped.';
+});
+
+captureBtn.addEventListener('click', async () => {
+  if (!cameraStream){
+    cameraStatus.textContent = 'Camera is not running.';
+    return;
+  }
+  if (!refFieldsValid()) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = cameraVideo.videoWidth;
+  canvas.height = cameraVideo.videoHeight;
+  canvas.getContext('2d').drawImage(cameraVideo, 0, 0);
+
+  // Show the just-captured frame in the same preview/overlay area the
+  // upload flow uses, so the bounding-box drawing code works unchanged.
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  previewImg.src = dataUrl;
+  previewWrap.style.display = 'block';
+  previewImg.onload = () => resizeOverlay();
+
+  canvas.toBlob(async (blob) => {
+    cameraStatus.textContent = 'Analyzing captured frame...';
+    await submitForAnalysis(blob, 'capture.jpg', captureBtn);
+    cameraStatus.textContent = 'Done — camera is still live, capture again anytime.';
+  }, 'image/jpeg', 0.92);
+});
+
+window.addEventListener('beforeunload', stopCamera);
+
+function showWarning(msg, isError){
+  const div = document.createElement('div');
+  div.className = 'warn' + (isError ? ' error' : '');
+  div.textContent = (isError ? '✕ ' : '!! ') + msg;
+  warningsEl.appendChild(div);
+}
+
+function methodTag(method){
+  if (!method) return '';
+  const m = method.toUpperCase();
+  let cls = 'measured';
+  if (m.includes('ASSUMED')) cls = 'assumed';
+  if (m.includes('FALLBACK')) cls = 'fallback';
+  if (m.includes('MANUAL')) cls = 'assumed';
+  const label = m.split(' ')[0];
+  return `<span class="tag ${cls}">${label}</span>`;
+}
+
+function render(data){
+  resizeOverlay();
+  drawOverlay(data);
+  legend.style.display = 'flex';
+
+  resultsPanel.style.display = 'block';
+  document.getElementById('rCategory').innerHTML = data.category;
+  document.getElementById('rHeight').innerHTML =
+    (data.height_mm != null ? data.height_mm.toFixed(1) + ' mm' : '—') + methodTag(data.height_method);
+  document.getElementById('rWidth').innerHTML =
+    (data.width_mm != null ? data.width_mm.toFixed(1) + ' mm' : '—') + methodTag(data.length_method);
+  document.getElementById('rDepth').innerHTML =
+    (data.length_mm != null ? data.length_mm.toFixed(1) + ' mm' : '—') + methodTag(data.length_method);
+
+  if (data.shoebox){
+    boxPanel.style.display = 'block';
+    document.getElementById('bHeight').textContent = data.shoebox.height.toFixed(0) + ' mm';
+    document.getElementById('bWidth').textContent  = data.shoebox.width.toFixed(0) + ' mm';
+    document.getElementById('bDepth').textContent  = data.shoebox.depth.toFixed(0) + ' mm';
+    document.getElementById('bFoot').textContent =
+      (data.foot_length_mm != null ? data.foot_length_mm.toFixed(1) + ' mm / EU ' + data.eu_size.toFixed(1) : '—');
+  }
+
+  const preview3dPanel = document.getElementById('preview3dPanel');
+  if (data.preview_3d_png_base64){
+    document.getElementById('preview3dImg').src = 'data:image/png;base64,' + data.preview_3d_png_base64;
+    preview3dPanel.style.display = 'block';
+  } else {
+    preview3dPanel.style.display = 'none';
+  }
+
+  (data.warnings || []).forEach(w => showWarning(w, false));
+  if (data.box_method === 'fallback_contour'){
+    showWarning('No confident YOLO detection on this photo — showing a rough fallback box instead (yellow). ' +
+                 'For a reliable box, train YOLO on more real-world (non-catalog) photos.', false);
+  }
+}
+
+function drawOverlay(data){
+  const ctx = overlay.getContext('2d');
+  ctx.clearRect(0,0,overlay.width, overlay.height);
+  if (!data.box || !data.image_width) return;
+
+  const sx = overlay.width  / data.image_width;
+  const sy = overlay.height / data.image_height;
+
+  // shoe bounding box
+  const [x0,y0,x1,y1] = data.box;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = data.box_method === 'yolo' ? '#7CFF6B' : '#FFE338';
+  ctx.strokeRect(x0*sx, y0*sy, (x1-x0)*sx, (y1-y0)*sy);
+
+  // scale reference viz, if any
+  const viz = data.scale_viz;
+  if (viz){
+    if (viz.method === 'A4' || viz.method === 'card'){
+      const corners = viz.viz.corners;
+      ctx.strokeStyle = viz.method === 'A4' ? '#3D7EFF' : 'orange';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      corners.forEach((pt, i) => {
+        const px = pt[0]*sx, py = pt[1]*sy;
+        i === 0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+      });
+      ctx.closePath();
+      ctx.stroke();
+    } else if (viz.method === 'coin'){
+      const [cx,cy,r] = viz.viz.circle;
+      ctx.strokeStyle = 'red';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(cx*sx, cy*sy, r*sx, r*sy, 0, 0, Math.PI*2);
+      ctx.stroke();
+    }
+  }
+}
+
+// ---- STL download ----
+stlBtn.addEventListener('click', async () => {
+  if (!lastResult || !lastResult.shoebox) return;
+  stlBtn.disabled = true;
+  stlBtn.textContent = 'Generating...';
+  try{
+    const resp = await fetch('/api/stl', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(lastResult.shoebox)
+    });
+    if (!resp.ok){
+      const data = await resp.json().catch(()=>({}));
+      showWarning(data.error || 'STL export failed.', true);
+      return;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'shoebox.stl';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(err){
+    showWarning('Could not reach the server: ' + err, true);
+  }finally{
+    stlBtn.disabled = false;
+    stlBtn.textContent = 'Download printable STL';
+  }
+});
+
+// ---- live camera / Bluetooth feed ----
+const liveToggle = document.getElementById('liveToggle');
+const liveStatus = document.getElementById('liveStatus');
+let livePolling = false;
+let lastSeenTs = 0;
+let pollTimer = null;
+
+liveToggle.addEventListener('click', () => {
+  livePolling = !livePolling;
+  if (livePolling){
+    liveToggle.textContent = 'Stop watching';
+    liveStatus.textContent = 'Watching for photos from bluetooth_watcher.py ...';
+    pollLive();
+  } else {
+    liveToggle.textContent = 'Start watching for camera photos';
+    liveStatus.textContent = 'Stopped.';
+    clearTimeout(pollTimer);
+  }
+});
+
+async function pollLive(){
+  if (!livePolling) return;
+  try{
+    const resp = await fetch(`/api/latest?since=${lastSeenTs}`);
+    const data = await resp.json();
+    if (data.new){
+      lastSeenTs = data.ts;
+      liveStatus.textContent = `New photo received via ${data.source} — analyzed just now.`;
+      lastResult = data.result;
+      // There's no local <img> preview for a photo we never uploaded
+      // ourselves, so just render the numeric results + 3D preview;
+      // skip the 2D bounding-box overlay (needs the actual pixels).
+      resultsPanel.style.display = 'block';
+      document.getElementById('rCategory').innerHTML = data.result.category;
+      document.getElementById('rHeight').innerHTML =
+        (data.result.height_mm != null ? data.result.height_mm.toFixed(1) + ' mm' : '—') + methodTag(data.result.height_method);
+      document.getElementById('rWidth').innerHTML =
+        (data.result.width_mm != null ? data.result.width_mm.toFixed(1) + ' mm' : '—') + methodTag(data.result.length_method);
+      document.getElementById('rDepth').innerHTML =
+        (data.result.length_mm != null ? data.result.length_mm.toFixed(1) + ' mm' : '—') + methodTag(data.result.length_method);
+      if (data.result.shoebox){
+        boxPanel.style.display = 'block';
+        document.getElementById('bHeight').textContent = data.result.shoebox.height.toFixed(0) + ' mm';
+        document.getElementById('bWidth').textContent  = data.result.shoebox.width.toFixed(0) + ' mm';
+        document.getElementById('bDepth').textContent  = data.result.shoebox.depth.toFixed(0) + ' mm';
+      }
+      if (data.result.preview_3d_png_base64){
+        document.getElementById('preview3dImg').src = 'data:image/png;base64,' + data.result.preview_3d_png_base64;
+        document.getElementById('preview3dPanel').style.display = 'block';
+      }
+    }
+  }catch(err){
+    liveStatus.textContent = 'Could not reach the server: ' + err;
+  }
+  pollTimer = setTimeout(pollLive, 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ---- Training artifacts: large, regenerable, NOT needed to run the app ----
+# Only outputs/models/cnn_category_classifier.pt and
+# outputs/models/yolo_run/weights/best.pt are needed to run app.py / demo_pipeline.py.
+# Everything below is either huge raw data or intermediate training checkpoints.
+outputs/cache/
+outputs/yolo_dataset/
+outputs/models/yolo_run/weights/epoch*.pt
+outputs/models/yolo_run/weights/last.pt
+outputs/models/yolo_run/*.png
+outputs/seed_demo/
+outputs/*.png
+outputs/demo_result.png
+outputs/shoebox.stl
+outputs/shoebox_preview.png
+
+# Dataset folders (if ever copied into the repo instead of referenced externally)
+dataset/
+*.zip
+
+# ---- OS / editor noise ----
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
+
+# ---- Uploaded/scratch test images (keep only the ones you intentionally commit) ----
+# Comment out or remove specific lines below if you want particular sample
+# images tracked for the README/demo.
+# *.jpg
+# *.jpeg
+# *.png
+# *.webp
